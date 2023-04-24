@@ -1,0 +1,12 @@
+#content-tables{
+  display: flex;
+  flex-direction: row;
+}
+
+#header-section{
+  background-color: cornflowerblue;
+  height: 60px;
+  display: flex;
+  flex-direction: row;
+}
+

@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capstone W2 Dashboard</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+
+  <style type="text/css">
+
+    /* On mouse hover, lighten state color */
+    path:hover {
+      fill-opacity: .7;
+    }
+
+    /* Style for Custom Tooltip */
+    div.tooltip {
+      position: absolute;
+      text-align: center;
+      width: 60px;
+      height: 28px;
+      padding: 2px;
+      font: 12px sans-serif;
+      background: white;
+      border-radius: 8px;
+      pointer-events: none;
+    }
+
+    /* Create a rectangle for the legend */
+    .legend-box {
+      height: 350px;
+      width: 200px;
+      /* Fix the position to the center of the div */
+      position: absolute;
+      margin-top: 100px;
+      margin-left: 1050px;
+      border: #5f00af 3px solid;
+      /* Add gradient */
+      /*background: linear-gradient(#d5ded9, #5f00af);*/
+    }
+
+    /* Legend attributes */
+    .legend {
+      height: 300px;
+      width: 20px;
+      /* Fix the position to the center of the div */
+      position: absolute;
+      margin-top: -135px;
+      margin-left: 400px;
+      /* Add gradient */
+      background: linear-gradient(#d5ded9, #5f00af);
+    }
+
+    /* Format the legend-title above the gradient */
+    .legend-title {
+      font-size: 16px;
+      font-family: sans-serif;
+      font-weight: bold;
+      color: #000;
+      /*  Align with the gradient */
+      position: absolute;
+      margin-top: -140px;
+      margin-left: 30px;
+
+    }
+
+    /* Format the legend-text under the gradient */
+    .legend-text {
+      font-size: 16px;
+      font-family: sans-serif;
+      font-weight: bold;
+      color: #000;
+      /*  Align with the gradient */
+      margin-top: -100px;
+      margin-left: 50px;
+
+    }
+
+  </style>
+</head>
+<body>
+
+<div id="body-div">
+  <section id="header-section">
+    <nav class="navbar navbar-light">
+      <div class="container">
+        <h2 style="margin-left: 15px ">Capstone W2 Data Dashboard</h2>
+      </div>
+    </nav>
+  </section>
+
+  <div id="main-content-div">
+    <section id="main-section">
+     <!-- <h1 style="color:indianred;"><b>Contents of the Dashboard</b></h1>
+      <p style="color:mediumpurple;"><b>Map.</b></p>
+      <p style="color:mediumpurple;"><b>Vendor Table.</b></p>
+      <p style="color:mediumpurple;"><b>Carrier Table.</b></p>
+      <p style="color:mediumpurple;"><b>Client Table.</b></p>-->
+      <!--      <div id="details-box"></div>-->
+      <script type="text/javascript">
+        var width = 900;
+        var height = 500;
+
+        // D3 Projection
+        var projection = d3.geo.albersUsa()
+          .translate([width/2, height/2])    // translate to center of screen
+          .scale([1000]);          // scale things down so see entire US
+
+        // Define path generator
+        var path = d3.geo.path()               // path generator that will convert GeoJSON to SVG paths
+          .projection(projection);  // tell path generator to use albersUsa projection
+
+
+        // Define linear scale for output
+        var color = d3.scale.linear()
+          .range(["rgb(213,222,217)","rgb(179,158,238)","rgb(167,91,229)"]);
+
+        //Create SVG element and append map to the SVG
+        var svg = d3.select("body")
+          .append("svg")
+          .attr("width", width)
+          .attr("height", height);
+
+        // Append Div for tooltip to SVG
+        var div = d3.select("body")
+          .append("div")
+          .attr("class", "tooltip")
+          .style("opacity", 0);
+
+        // Load in the state data!
+        d3.csv("/assets/map_count.csv", function(data) {
+
+
+// Load GeoJSON data and merge with states data
+          d3.json("/assets/us-states.txt", function (json) {
+            color.domain([0,1,2,3]); // setting the range of the input data
+
+// Loop through each state data value in the .csv file
+            for (var i = 0; i < data.length; i++) {
+
+              var mapNum = data[i].map_countID;
+
+              // Grab State Name
+              var dataState = data[i].state;
+
+              // Grab data value
+              var dataValue = data[i].Count;
+
+              // Find the corresponding state inside the GeoJSON
+              for (var j = 0; j < json.features.length; j++) {
+                var jsonState = json.features[j].properties.name;
+
+                // Store the state names and path in two different variables to be used in the tooltip
+
+                // Change the state abbreviations to the full name
+                dataState = dataState.replace("AL", "Alabama");
+                dataState = dataState.replace("AK", "Alaska");
+                dataState = dataState.replace("AZ", "Arizona");
+                dataState = dataState.replace("AR", "Arkansas");
+                dataState = dataState.replace("CA", "California");
+                dataState = dataState.replace("CO", "Colorado");
+                dataState = dataState.replace("CT", "Connecticut");
+                dataState = dataState.replace("DE", "Delaware");
+                dataState = dataState.replace("DC", "District of Columbia");
+                dataState = dataState.replace("FL", "Florida");
+                dataState = dataState.replace("GA", "Georgia");
+                dataState = dataState.replace("HI", "Hawaii");
+                dataState = dataState.replace("ID", "Idaho");
+                dataState = dataState.replace("IL", "Illinois");
+                dataState = dataState.replace("IN", "Indiana");
+                dataState = dataState.replace("IA", "Iowa");
+                dataState = dataState.replace("KS", "Kansas");
+                dataState = dataState.replace("KY", "Kentucky");
+                dataState = dataState.replace("LA", "Louisiana");
+                dataState = dataState.replace("ME", "Maine");
+                dataState = dataState.replace("MD", "Maryland");
+                dataState = dataState.replace("MA", "Massachusetts");
+                dataState = dataState.replace("MI", "Michigan");
+                dataState = dataState.replace("MN", "Minnesota");
+                dataState = dataState.replace("MS", "Mississippi");
+                dataState = dataState.replace("MO", "Missouri");
+                dataState = dataState.replace("MT", "Montana");
+                dataState = dataState.replace("NE", "Nebraska");
+                dataState = dataState.replace("NV", "Nevada");
+                dataState = dataState.replace("NH", "New Hampshire");
+                dataState = dataState.replace("NJ", "New Jersey");
+                dataState = dataState.replace("NM", "New Mexico");
+                dataState = dataState.replace("NY", "New York");
+                dataState = dataState.replace("NC", "North Carolina");
+                dataState = dataState.replace("ND", "North Dakota");
+                dataState = dataState.replace("OH", "Ohio");
+                dataState = dataState.replace("OK", "Oklahoma");
+                dataState = dataState.replace("OR", "Oregon");
+                dataState = dataState.replace("PA", "Pennsylvania");
+                dataState = dataState.replace("RI", "Rhode Island");
+                dataState = dataState.replace("SC", "South Carolina");
+                dataState = dataState.replace("SD", "South Dakota");
+                dataState = dataState.replace("TN", "Tennessee");
+                dataState = dataState.replace("TX", "Texas");
+                dataState = dataState.replace("UT", "Utah");
+                dataState = dataState.replace("VT", "Vermont");
+                dataState = dataState.replace("VA", "Virginia");
+                dataState = dataState.replace("WA", "Washington");
+                dataState = dataState.replace("WV", "West Virginia");
+                dataState = dataState.replace("WI", "Wisconsin");
+                dataState = dataState.replace("WY", "Wyoming");
+
+                if (dataState == jsonState) {
+
+                  // Copy the data value into the JSON
+                  json.features[j].properties.Count = dataValue;
+
+                  // Stop looking through the JSON
+                  break;
+                }
+              }
+            }
+
+// Bind the data to the SVG and create one path per GeoJSON feature
+            svg.selectAll("path")
+              .data(json.features)
+              .enter()
+              .append("path")
+              .attr("d", path)
+              .style("stroke", "#ffffff")
+              .style("stroke-width", "1")
+              .style("fill", function (d) {
+
+                // Get data value
+                var value = d.properties.Count;
+
+                if (value) {
+                  //If value exists…
+                  return color(value);
+                } else {
+                  //If value is undefined…
+                  return "rgb(213,222,217)";
+                }
+              })
+
+              // Add mouseover event listener to display state name
+              .on("mouseover", function (d) {
+                div.transition()
+                  .duration(200)
+                  .style("opacity", .7);
+                div.text(d.properties.name)
+                  // Make the tooltip the size of the name
+                  .style("width", function () {
+                    return (d.properties.name.length * 8) + "px";
+                  })
+                  .style("left", (d3.event.pageX) + "px")
+                  .style("top", (d3.event.pageY - 28) + "px")
+                  .style("border", "1px solid #6F42C1FF");
+              })
+
+              // Add mouseout event listener to hide tooltip
+              .on("mouseout", function (d) {
+                div.transition()
+                  .duration(500)
+                  .style("opacity", 0);
+              });
+
+// Modified Legend Code from Mike Bostock: http://bl.ocks.org/mbostock/3888852
+            var legend = d3.select("body").append("svg")
+              // Add a title to the legend
+              .attr("class", "legend")
+              .attr("width", 140)
+              .attr("height", 200)
+              .selectAll("g")
+              .data(color.domain().slice().reverse())
+              .enter()
+              .append("g")
+              .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+          });
+        });
+
+      </script>
+      <!--      Create a div for the legend box-->
+      <div class="legend-box">
+        <svg></svg>
+        <div class="legend-title">
+          <p>Number of Cases</p>
+        </div>
+        <div class="legend-text">
+          <p>0</p>
+          <br><br>
+          <p>1-2</p>
+          <br><br>
+          <p>3-5</p>
+          <br><br>
+          <p>6+</p>
+        </div>
+      </div>
+      <!--      Add title for the legend -->
+
+
+
+    </section>
+  </div>
+
+  <app-root></app-root>
+
+
+</div>
+<section id="data-table-section">
+  <app-data-table></app-data-table>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+</body>
+</html>
